@@ -1,0 +1,71 @@
+# EkromVPN Backup
+
+## 🔐 รหัสผ่านถอดรหัส Backup
+```
+d0e22460167d0919700ffc1d828b61d4
+```
+
+## 📥 วิธีถอดรหัส
+```
+openssl enc -aes-256-cbc -d -pbkdf2 -in ไฟล์.enc -out backup.tar.gz
+tar -xzf backup.tar.gz
+```
+
+
+## 🚀 วิธีกู้คืน (ก็อปวางทีละบรรทัด)
+
+### 1. ติดตั้งพื้นฐาน
+```
+apt update && apt upgrade -y
+apt install -y nginx python3 python3-pip sqlite3 git
+pip3 install flask requests qrcode[pil] line-bot-sdk promptpay-qr
+curl https://get.acme.sh | sh
+```
+
+### 2. โคลน Backup
+```
+git clone https://github.com/EkromSSH/ekromvpn-backup.git
+cd ekromvpn-backup
+```
+
+### 3. ถอดรหัส
+```
+openssl enc -aes-256-cbc -d -pbkdf2 -in backup-ล่าสุด.enc -out backup.tar.gz
+tar -xzf backup.tar.gz
+```
+
+### 4. ก็อปไฟล์
+```
+cp -r hermes-commerce /root/
+cp -r cert /root/cert/
+cp nginx.conf /etc/nginx/sites-available/hermes-commerce
+ln -sf /etc/nginx/sites-available/hermes-commerce /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
+```
+
+### 5. ติดตั้ง x-ui
+```
+bash <(curl -Ls https://raw.githubusercontent.com/vaxilu/x-ui/master/install.sh)
+systemctl stop x-ui
+cp x-ui.db /etc/x-ui/x-ui.db
+systemctl start x-ui
+```
+
+### 6. SSL + เริ่มระบบ
+```
+/root/.acme.sh/acme.sh --issue -d vip4.idavpn.win --standalone
+nginx -t && systemctl start nginx
+cp hermes-commerce/hermes-commerce.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable hermes-commerce
+systemctl start hermes-commerce
+```
+
+### 7. เช็คว่าทำงาน
+```
+curl -sk https://vip4.idavpn.win/health
+curl -sk https://vip4.idavpn.win/
+```
+
+### 8. ทดสอบ LINE
+พิมพ์ "สมัคร" ใน LINE OA EkromVPN

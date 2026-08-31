@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EkromVPN — สั่งซื้อ</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, 'Sarabun', sans-serif; background: #0a0e17; color: #fff; }
+  .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+  
+  /* Header */
+  .header { text-align: center; padding: 40px 0 30px; }
+  .logo { width: 80px; height: 80px; background: linear-gradient(135deg,#00d4ff,#0066ff);
+           border-radius: 20px; display: flex; align-items: center; justify-content: center;
+           margin: 0 auto 15px; font-size: 36px; font-weight: bold; }
+  .header h1 { font-size: 28px; background: linear-gradient(135deg,#00d4ff,#0066ff);
+               -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header p { color: #8899bb; margin-top: 8px; }
+  
+  /* Packages */
+  .packages { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 30px 0; }
+  .pkg-card { background: #131a2e; border: 1px solid #1e2a45; border-radius: 16px; padding: 20px 12px;
+              text-align: center; cursor: pointer; transition: .3s; }
+  .pkg-card:hover { border-color: #00d4ff; transform: translateY(-4px); }
+  .pkg-card .price { font-size: 32px; font-weight: bold; color: #00d4ff; }
+  .pkg-card .period { color: #8899bb; font-size: 13px; }
+  .pkg-card .save { background: #00d4ff22; color: #00d4ff; font-size: 11px; padding: 3px 8px;
+                    border-radius: 8px; display: inline-block; margin-top: 8px; }
+  .pkg-card .devices { color: #667799; font-size: 12px; margin-top: 6px; }
+  .pkg-card.active { border-color: #00d4ff; background: #00d4ff11; }
+  
+  /* Server Selection */
+  .section-title { font-size: 16px; color: #8899bb; margin: 25px 0 12px; }
+  .server-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+  .server-btn { background: #131a2e; border: 1px solid #1e2a45; border-radius: 12px; padding: 14px;
+                text-align: center; cursor: pointer; transition: .3s; }
+  .server-btn:hover { border-color: #00d4ff; }
+  .server-btn .tag { font-size: 11px; background: #1e2a45; padding: 2px 8px; border-radius: 6px;
+                     color: #8899bb; display: inline-block; margin-bottom: 4px; }
+  .server-btn .name { font-size: 14px; font-weight: 600; }
+  .server-btn .proto { font-size: 11px; color: #667799; margin-top: 2px; }
+  .server-btn.active { border-color: #00d4ff; background: #00d4ff11; }
+  
+  /* Form */
+  .input-group { margin: 15px 0; }
+  .input-group label { display: block; font-size: 13px; color: #8899bb; margin-bottom: 6px; }
+  .input-group input { width: 100%; padding: 14px 16px; background: #131a2e; border: 1px solid #1e2a45;
+                       border-radius: 12px; color: #fff; font-size: 15px; outline: none; }
+  .input-group input:focus { border-color: #00d4ff; }
+  
+  /* Payment */
+  .payment-box { background: #131a2e; border: 1px solid #1e2a45; border-radius: 16px; padding: 24px;
+                 text-align: center; margin: 20px 0; }
+  .payment-box .amount { font-size: 42px; font-weight: bold; color: #00d4ff; }
+  .payment-box .qr-placeholder { width: 200px; height: 200px; background: #fff; border-radius: 16px;
+                                 margin: 20px auto; display: flex; align-items: center;
+                                 justify-content: center; color: #000; font-size: 12px; }
+  .payment-box .bank-info { color: #8899bb; font-size: 13px; line-height: 1.8; }
+  
+  /* Upload */
+  .upload-box { border: 2px dashed #1e2a45; border-radius: 16px; padding: 40px; text-align: center;
+                margin: 20px 0; cursor: pointer; transition: .3s; }
+  .upload-box:hover { border-color: #00d4ff; background: #00d4ff08; }
+  .upload-box .icon { font-size: 40px; }
+  .upload-box p { color: #8899bb; margin-top: 8px; }
+  
+  /* Button */
+  .btn-primary { width: 100%; padding: 16px; background: linear-gradient(135deg,#00d4ff,#0066ff);
+                 border: none; border-radius: 12px; color: #fff; font-size: 16px; font-weight: 600;
+                 cursor: pointer; transition: .3s; margin: 10px 0; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px #00d4ff33; }
+  
+  /* Result */
+  .result-box { background: #0e1a0e; border: 1px solid #00d4ff33; border-radius: 16px; padding: 24px;
+                margin: 20px 0; display: none; }
+  .result-box .success-icon { color: #00ff88; font-size: 48px; text-align: center; margin-bottom: 10px; }
+  .result-box .config-link { word-break: break-all; color: #00d4ff; font-size: 12px;
+                             background: #0a0e17; padding: 12px; border-radius: 8px; margin: 10px 0; }
+  
+  /* Steps */
+  .step-indicator { display: flex; justify-content: center; gap: 8px; margin: 20px 0; }
+  .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #1e2a45; }
+  .step-dot.active { background: #00d4ff; }
+  .step-dot.done { background: #00ff88; }
+  
+  .footer { text-align: center; color: #445566; font-size: 12px; padding: 30px 0 60px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">E</div>
+    <h1>EkromVPN</h1>
+    <p>เลือกแพ็กเกจที่ใช่สำหรับคุณ</p>
+  </div>
+
+  <!-- Step -->
+  <div class="step-indicator">
+    <div class="step-dot active"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+  </div>
+
+  <!-- Step 1: Package Selection -->
+  <div class="packages">
+    <div class="pkg-card active">
+      <div class="price">50</div>
+      <div class="period">1 เดือน</div>
+      <div class="devices">📱 2 เครื่อง</div>
+    </div>
+    <div class="pkg-card">
+      <div class="price">130</div>
+      <div class="period">3 เดือน</div>
+      <div class="save">ประหยัด 20</div>
+      <div class="devices">📱 2 เครื่อง</div>
+    </div>
+    <div class="pkg-card">
+      <div class="price">240</div>
+      <div class="period">6 เดือน</div>
+      <div class="save">ประหยัด 60</div>
+      <div class="devices">📱 2 เครื่อง</div>
+    </div>
+    <div class="pkg-card">
+      <div class="price">420</div>
+      <div class="period">12 เดือน</div>
+      <div class="save">ประหยัด 180</div>
+      <div class="devices">📱 2 เครื่อง</div>
+    </div>
+  </div>
+
+  <!-- Step 2: Server -->
+  <div class="section-title">🌐 เลือกเซิร์ฟเวอร์</div>
+  <div class="server-grid">
+    <div class="server-btn active">
+      <div class="tag">🇹🇭 AIS</div>
+      <div class="name">AIS-VIP</div>
+      <div class="proto">VMESS · WS · 80</div>
+    </div>
+    <div class="server-btn">
+      <div class="tag">🇹🇭 AIS</div>
+      <div class="name">AIS-TCP</div>
+      <div class="proto">VMESS · TCP · 8080</div>
+    </div>
+    <div class="server-btn">
+      <div class="tag">🇹🇭 FB</div>
+      <div class="name">FB-GAMING</div>
+      <div class="proto">VMESS · TLS · 8000</div>
+    </div>
+    <div class="server-btn">
+      <div class="tag">🇹🇭 TRUE</div>
+      <div class="name">TRUE VLESS</div>
+      <div class="proto">VLESS · WS · 2053</div>
+    </div>
+  </div>
+
+  <!-- Step 3: Info -->
+  <div class="input-group">
+    <label>👤 ชื่อของคุณ</label>
+    <input type="text" placeholder="เช่น สมศักดิ์">
+  </div>
+  <div class="input-group">
+    <label>📞 เบอร์โทรศัพท์</label>
+    <input type="text" placeholder="081-234-5678">
+  </div>
+
+  <button class="btn-primary">💳 ไปชำระเงิน</button>
+
+  <!-- Step 4: Payment -->
+  <div class="payment-box">
+    <div style="color:#8899bb;font-size:14px;">ยอดชำระ</div>
+    <div class="amount">50 บาท</div>
+    <div class="qr-placeholder">📱 QR PromptPay</div>
+    <div class="bank-info">
+      🏦 กสิกรไทย · อับดุลซการิง ลอแต<br>
+      📄 1741779060
+    </div>
+  </div>
+
+  <div class="upload-box">
+    <div class="icon">📸</div>
+    <p>อัปโหลดสลิปโอนเงิน<br><span style="font-size:12px;">รองรับ JPG, PNG</span></p>
+  </div>
+
+  <button class="btn-primary">✅ ยืนยันคำสั่งซื้อ</button>
+
+  <!-- Result -->
+  <div class="result-box" style="display:block;">
+    <div class="success-icon">✅</div>
+    <div style="text-align:center;margin-bottom:12px;">
+      <strong>สร้างบัญชีสำเร็จ!</strong><br>
+      <span style="color:#8899bb;font-size:13px;">ใช้งานได้ 30 วัน หมดอายุ 27/ส.ค./2569</span>
+    </div>
+    <div class="config-link">
+      vless://2cc8f9aa-5985-433d-89c5-af009da09b35@vip4.idavpn.win:2053...
+    </div>
+    <div style="text-align:center;margin-top:12px;">
+      <span style="color:#00d4ff;font-size:13px;">📸 QR Code</span>
+    </div>
+  </div>
+
+  <div class="footer">© 2026 EkromVPN · All rights reserved</div>
+</div>
+</body>
+</html>
