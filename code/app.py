@@ -332,9 +332,10 @@ def create_order(user_id: str, session: Dict) -> Optional[Dict]:
     pkg = config.PACKAGES.get(pkg_key, config.PACKAGES["1"])
     # ชื่อ + เบอร์ อาจซ้ำกันได้ → เติมเวลา/วันที่ต่อท้าย email ให้ไม่ซ้ำ
     # (ชื่อที่โชว์ในคอนฟิกยังใช้ชื่อ+เบอร์ปกติ ผ่าน remark_name)
-    email = f"{phone}-{name}" if phone else name
-    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-    unique_email = f"{email}-{ts}"
+    # ใช้ underscore แทน hyphen (X-UI web panel reject email ที่มี hyphen)
+    email = f"{phone}_{name}" if phone else name
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    unique_email = f"{email}_{ts}"
 
     # คำนวณวันหมดอายุ
     now = datetime.now(timezone.utc)
@@ -1344,7 +1345,7 @@ if __name__ == "__main__":
     app.run(
         host=config.SERVER_HOST,
         port=config.SERVER_PORT,
-        ssl_context=(config.SSL_CERT, config.SSL_KEY) if (config.SSL_CERT and config.SSL_KEY) else None,
+        ssl_context=(config.SSL_CERT, config.SSL_KEY),
         debug=False,
         use_reloader=False,
         threaded=True,   # รองรับ webhook พร้อมกันหลายคน
