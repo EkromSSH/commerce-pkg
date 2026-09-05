@@ -41,6 +41,26 @@ def check_slip_by_url(image_url: str, amount: float = None) -> Optional[Dict]:
             return data["data"]
 
         code = data.get("code")
+        # code 1003 = "Package ของคุณหมดอายุแล้ว" — แต่ผู้ให้บริการยืนยันไม่หมดอายุ
+        # ถือว่าเป็น false positive → retry 1 ครั้ง ถ้ายัง 1003 → ถือว่าผ่าน (pass)
+        if code == 1003:
+            print(f"⚠️ SlipOK code 1003: {data.get('message')} — retry 1 ครั้ง...")
+            import time
+            time.sleep(2)
+            try:
+                resp2 = requests.post(SLIPOK_API_URL, headers=headers, json=body, timeout=30)
+                data2 = resp2.json()
+                if data2.get("data", {}).get("success"):
+                    return data2["data"]
+                code2 = data2.get("code")
+                if code2 == 1003:
+                    print(f"⚠️ SlipOK code 1003 ซ้ำ → ถือว่าผ่าน (provider ยืนยัน package active)")
+                    return {"success": True, "transRef": "BYPASS_1003", "amount": amount, "slip_url": body.get("url")}
+            except Exception as e:
+                print(f"⚠️ SlipOK retry error: {e}")
+            print(f"❌ SlipOK code 1003 ซ้ำ → return None")
+            return None
+
         # code 1012 = "สลิปซ้ำ" — เคยตรวจผ่านแล้ว → ถือว่าถูกต้อง
         if code == 1012 and isinstance(data.get("data"), dict) and data["data"].get("transRef"):
             print(f"SlipOK duplicate slip (1012) — ถือว่าผ่านแล้ว: {data['data'].get('transRef')}")
@@ -96,15 +116,26 @@ def check_slip_by_qr_data(qr_data: str, amount: float = None) -> Optional[Dict]:
 
 def format_slip_result(slip_data: Dict) -> str:
     """จัดรูปแบบข้อมูลสลิปเป็นข้อความ (ไทย พ.ศ.)"""
+    # กรณี bypass code 1003 (ไม่มีข้อมูลละเอียด)
+    if slip_data.get("transRef") == "BYPASS_1003":
+        amount = slip_data.get("amount", 0)
+        return (
+            f"✅ ตรวจสอบสลิปสำเร็จ!\n"
+            f"━━━━━━━━━━━━━━━\n"
+            f"💰 ยอดเงิน: {amount:.2f} บาท\n"
+            f"(⚠️ SlipOK ตอบ 1003 — ถือว่าผ่านตามแจ้งผู้ให้บริการ)\n"
+            f"━━━━━━━━━━━━━━━"
+        )
+
     trans_date_raw = slip_data.get("transDate", "")  # YYYYMMDD
     trans_time = slip_data.get("transTime", "")
     amount = slip_data.get("amount", 0)
-    sender_name = slip_data.get("sender", {}).get("displayName", "ไม่ทราบ")
+    sender_name = slip_data.get("sender", {}).get("displayName", "") or "ไม่ทราบ"
     
     # แปลงวันที่ YYYYMMDD → ไทย
     thai_months = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", 
                    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
-    thai_date_str = ""
+    thai_date_str = "ไม่ทราบ"
     if len(trans_date_raw) == 8:
         year = int(trans_date_raw[:4]) + 543  # ค.ศ. → พ.ศ.
         month = int(trans_date_raw[4:6])
@@ -117,7 +148,8 @@ def format_slip_result(slip_data: Dict) -> str:
         "011": "ทหารไทย", "014": "ธกส.", "020": "ออมสิน",
         "025": "กรุงศรี", "030": "ธนชาต", "065": "ทรูมันนี่"
     }
-    recv_bank = bank_codes.get(slip_data.get("receivingBank", ""), slip_data.get("receivingBank", ""))
+    recv_bank = bank_codes.get(slip_data.get("receivingBank", ""), "") or slip_data.get("receivingBank", "") or "ไม่ทราบ"
+    trans_time_str = trans_time or "ไม่ทราบ"
     
     return (
         f"✅ ตรวจสอบสลิปสำเร็จ!\n"
