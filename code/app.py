@@ -1177,6 +1177,29 @@ def execute_renewal(user_id: str, session: Dict, reply_token: str = None):
         f"สามารถใช้งานต่อได้เลย 🚀"
     )
 
+    # ส่ง config เดิมให้ (ไฟล์เดิม ไม่ต้องสร้างใหม่)
+    inbound_names = {
+        "1": "AIS-PLAY", "2": "TRUE-NOPRO", "3": "TRUE-ROV",
+        "4": "TRUE-FB", "5": "TRUE-ZOOM", "6": "DTAC-NOPRO", "7": "DTAC-GAMING",
+    }
+    sv_name = inbound_names.get(str(client.get("inbound_id", "")), "VPN")
+    vmess_link = generate_vmess_link(
+        client_id=client["client_id"],
+        email=client["email"],
+        inbound_id=client.get("inbound_id", 14),
+        remark_prefix=sv_name,
+        expiry_str=expiry_str,
+        remark_name=client["email"],
+    )
+    push_text(user_id, f"{vmess_link}")
+
+    # ส่ง QR Code เดิม (ถ้ามี) หรือสร้างใหม่จากลิงก์
+    safe_filename = f"config_{int(time.time())}.png"
+    qr_path = generate_qr_code(vmess_link, safe_filename)
+    if qr_path and os.path.exists(qr_path):
+        qr_url = f"https://{config.SERVER_DOMAIN}/configs/{os.path.basename(qr_path)}"
+        push_text(user_id, f"📸 QR Code: {qr_url}")
+
     update_session(user_id, step="menu", data={})
 
 
